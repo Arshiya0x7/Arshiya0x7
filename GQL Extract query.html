@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GraphQL Query Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+        }
+
+        .upload-area:hover {
+            background: #edf0ff;
+            border-color: #5a6fd8;
+        }
+
+        .upload-area i {
+            font-size: 48px;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .upload-area p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .query-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 1px solid #eaeaea;
+            transition: all 0.3s ease;
+        }
+
+        .query-header:hover {
+            background: #edf0ff;
+        }
+
+        .query-header.active {
+            background: #e1e8ff;
+            border-color: #667eea;
+        }
+
+        .query-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .query-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .query-header.active .query-icon {
+            transform: rotate(90deg);
+        }
+
+        .query-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .query-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .return-type {
+            background: #e1e8ff;
+            color: #4a5fc1;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .param-count {
+            background: #ffe1e1;
+            color: #c14a4a;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .query-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: white;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .query-content.active {
+            max-height: 2000px;
+        }
+
+        .query-details {
+            padding: 20px;
+            border: 1px solid #eaeaea;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: #555;
+            margin: 15px 0 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .args-list, .fields-list {
+            list-style-type: none;
+        }
+
+        .arg-item, .field-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .arg-name, .field-name {
+            font-weight: 600;
+            color: #444;
+        }
+
+        .arg-type, .field-type {
+            color: #667eea;
+            font-family: monospace;
+            background: #f0f3ff;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .arg-default {
+            color: #888;
+            font-size: 0.9rem;
+        }
+
+        .query-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .copy-btn {
+            background: #4a5568;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+
+        .copy-btn:hover {
+            background: #2d3748;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            border-bottom: 3px solid #667eea;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .summary {
+            background: #e1e8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .summary h3 {
+            margin-bottom: 10px;
+            color: #4a5fc1;
+        }
+
+        .summary-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .query-card {
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .summary-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .arg-item, .field-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .query-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .query-meta {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>GraphQL Query Extractor</h1>
+            <p class="subtitle">Upload your JSON schema and automatically extract queries and fields</p>
+        </header>
+
+        <div class="card">
+            <div id="upload-section">
+                <div class="upload-area" id="drop-area">
+                    <i>📁</i>
+                    <h3>Drop your JSON file here</h3>
+                    <p>or click to select a file</p>
+                    <input type="file" id="file-input" accept=".json" class="hidden">
+                    <button class="btn" id="browse-btn">Browse Files</button>
+                </div>
+            </div>
+
+            <div id="processing-section" class="hidden">
+                <div style="text-align: center; padding: 30px;">
+                    <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                    <h3>Processing your file...</h3>
+                    <p>Please wait a moment</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="results-section" class="hidden">
+            <div class="tabs">
+                <div class="tab active" data-tab="queries">Queries</div>
+                <div class="tab" data-tab="summary">Summary</div>
+                <div class="tab" data-tab="export">Export</div>
+            </div>
+
+            <div class="tab-content active" id="queries-tab">
+                <div id="queries-container"></div>
+            </div>
+
+            <div class="tab-content" id="summary-tab">
+                <div class="summary">
+                    <h3>Schema Summary</h3>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <div class="stat-value" id="total-queries">0</div>
+                            <div class="stat-label">Queries</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="total-params">0</div>
+                            <div class="stat-label">Parameters</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value" id="total-types">0</div>
+                            <div class="stat-label">Data Types</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="export-tab">
+                <div class="card">
+                    <h3>Editable Output</h3>
+                    <p>You can edit and copy the results:</p>
+                    <textarea id="export-textarea" style="width: 100%; height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: monospace; margin-top: 15px;"></textarea>
+                    <div class="actions">
+                        <button class="btn copy-btn" id="copy-export-btn">Copy to Clipboard</button>
+                        <button class="btn btn-outline" id="download-export-btn">Download as Text File</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.getElementById('file-input');
+            const browseBtn = document.getElementById('browse-btn');
+            const dropArea = document.getElementById('drop-area');
+            const uploadSection = document.getElementById('upload-section');
+            const processingSection = document.getElementById('processing-section');
+            const resultsSection = document.getElementById('results-section');
+            const queriesContainer = document.getElementById('queries-container');
+            const exportTextarea = document.getElementById('export-textarea');
+            const copyExportBtn = document.getElementById('copy-export-btn');
+            const downloadExportBtn = document.getElementById('download-export-btn');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            // Statistics
+            const totalQueriesEl = document.getElementById('total-queries');
+            const totalParamsEl = document.getElementById('total-params');
+            const totalTypesEl = document.getElementById('total-types');
+
+            // Tab management
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Deactivate all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Activate selected tab
+                    tab.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+
+            // Open file selection dialog
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // Handle file selection
+            fileInput.addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    processFile(this.files[0]);
+                }
+            });
+
+            // Handle drag and drop
+            dropArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.background = '#e1e8ff';
+            });
+
+            dropArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.background = '#f8f9ff';
+            });
+
+            dropArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.background = '#f8f9ff';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    processFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // Copy export content
+            copyExportBtn.addEventListener('click', function() {
+                exportTextarea.select();
+                document.execCommand('copy');
+                
+                // Show success message
+                const originalText = this.textContent;
+                this.textContent = 'Copied!';
+                setTimeout(() => {
+                    this.textContent = originalText;
+                }, 2000);
+            });
+
+            // Download export
+            downloadExportBtn.addEventListener('click', function() {
+                const content = exportTextarea.value;
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'graphql_queries.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+
+            // Process JSON file
+            function processFile(file) {
+                if (file.type !== 'application/json') {
+                    alert('Please select a JSON file.');
+                    return;
+                }
+
+                uploadSection.classList.add('hidden');
+                processingSection.classList.remove('hidden');
+
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const jsonData = JSON.parse(e.target.result);
+                        setTimeout(() => {
+                            extractQueries(jsonData);
+                            processingSection.classList.add('hidden');
+                            resultsSection.classList.remove('hidden');
+                        }, 500); // Artificial delay for better UX
+                    } catch (error) {
+                        alert('Error processing JSON file: ' + error.message);
+                        resetUI();
+                    }
+                };
+                
+                reader.onerror = function() {
+                    alert('Error reading file');
+                    resetUI();
+                };
+                
+                reader.readAsText(file);
+            }
+
+            // Extract queries from JSON data
+            function extractQueries(jsonData) {
+                queriesContainer.innerHTML = '';
+                let exportContent = '';
+                let totalQueries = 0;
+                let totalParams = 0;
+                const types = new Set();
+
+                if (jsonData.data && jsonData.data.__type) {
+                    const fields = jsonData.data.__type.fields || [];
+                    totalQueries = fields.length;
+
+                    fields.forEach((field, index) => {
+                        const queryCard = document.createElement('div');
+                        queryCard.className = 'query-card';
+                        
+                        // Query header (collapsible)
+                        const queryHeader = document.createElement('div');
+                        queryHeader.className = 'query-header';
+                        
+                        const returnType = extractTypeInfo(field.type);
+                        types.add(returnType);
+                        
+                        const paramCount = field.args ? field.args.length : 0;
+                        totalParams += paramCount;
+                        
+                        queryHeader.innerHTML = `
+                            <div class="query-title">
+                                <span class="query-icon">▶</span>
+                                <span class="query-name">${field.name}</span>
+                            </div>
+                            <div class="query-meta">
+                                <span class="return-type">Returns: ${returnType}</span>
+                                ${paramCount > 0 ? `<span class="param-count">${paramCount} params</span>` : ''}
+                            </div>
+                        `;
+                        
+                        // Query content (collapsible)
+                        const queryContent = document.createElement('div');
+                        queryContent.className = 'query-content';
+                        
+                        const queryDetails = document.createElement('div');
+                        queryDetails.className = 'query-details';
+                        
+                        // Parameters
+                        if (field.args && field.args.length > 0) {
+                            const argsTitle = document.createElement('div');
+                            argsTitle.className = 'section-title';
+                            argsTitle.textContent = `Parameters (${field.args.length})`;
+                            queryDetails.appendChild(argsTitle);
+                            
+                            const argsList = document.createElement('ul');
+                            argsList.className = 'args-list';
+                            
+                            field.args.forEach(arg => {
+                                const argItem = document.createElement('li');
+                                argItem.className = 'arg-item';
+                                
+                                const argType = extractTypeInfo(arg.type);
+                                types.add(argType);
+                                
+                                argItem.innerHTML = `
+                                    <div>
+                                        <span class="arg-name">${arg.name}</span>
+                                        ${arg.defaultValue && arg.defaultValue !== 'null' ? 
+                                            `<span class="arg-default">(default: ${arg.defaultValue})</span>` : ''}
+                                    </div>
+                                    <span class="arg-type">${argType}</span>
+                                `;
+                                
+                                argsList.appendChild(argItem);
+                            });
+                            
+                            queryDetails.appendChild(argsList);
+                        }
+                        
+                        // Query example
+                        const exampleTitle = document.createElement('div');
+                        exampleTitle.className = 'section-title';
+                        exampleTitle.textContent = 'Query Example';
+                        queryDetails.appendChild(exampleTitle);
+                        
+                        const queryExample = document.createElement('div');
+                        queryExample.className = 'query-example';
+                        
+                        let queryExampleText = '';
+                        if (field.args && field.args.length > 0) {
+                            const argsString = field.args.map(arg => {
+                                return `  ${arg.name}: $${arg.name}`;
+                            }).join('\n');
+                            
+                            queryExampleText = `query ${field.name}Query(\n${argsString}\n) {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
+                        } else {
+                            queryExampleText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
+                        }
+                        
+                        queryExample.textContent = queryExampleText;
+                        queryDetails.appendChild(queryExample);
+                        
+                        // Action buttons
+                        const actions = document.createElement('div');
+                        actions.className = 'actions';
+                        actions.innerHTML = `
+                            <button class="btn copy-btn" data-query="${field.name}">Copy Query</button>
+                        `;
+                        queryDetails.appendChild(actions);
+                        
+                        queryContent.appendChild(queryDetails);
+                        
+                        // Toggle collapse/expand
+                        queryHeader.addEventListener('click', () => {
+                            queryHeader.classList.toggle('active');
+                            queryContent.classList.toggle('active');
+                        });
+                        
+                        queryCard.appendChild(queryHeader);
+                        queryCard.appendChild(queryContent);
+                        queriesContainer.appendChild(queryCard);
+                        
+                        // Add to export content
+                        exportContent += `Query: ${field.name}\n`;
+                        exportContent += `Return Type: ${returnType}\n`;
+                        
+                        if (field.args && field.args.length > 0) {
+                            exportContent += `Parameters:\n`;
+                            field.args.forEach(arg => {
+                                const argType = extractTypeInfo(arg.type);
+                                exportContent += `  - ${arg.name}: ${argType}`;
+                                if (arg.defaultValue && arg.defaultValue !== 'null') {
+                                    exportContent += ` (default: ${arg.defaultValue})`;
+                                }
+                                exportContent += `\n`;
+                            });
+                        }
+                        
+                        exportContent += `Example:\n${queryExampleText}\n\n`;
+                        exportContent += '='.repeat(50) + '\n\n';
+                    });
+                }
+                
+                // Update statistics
+                totalQueriesEl.textContent = totalQueries;
+                totalParamsEl.textContent = totalParams;
+                totalTypesEl.textContent = types.size;
+                
+                // Update export content
+                exportTextarea.value = exportContent;
+                
+                // Add event listeners for copy buttons
+                document.querySelectorAll('.copy-btn[data-query]').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // Prevent triggering the collapse/expand
+                        const queryName = this.getAttribute('data-query');
+                        const queryCard = this.closest('.query-card');
+                        const queryExample = queryCard.querySelector('.query-example').textContent;
+                        
+                        navigator.clipboard.writeText(queryExample).then(() => {
+                            const originalText = this.textContent;
+                            this.textContent = 'Copied!';
+                            setTimeout(() => {
+                                this.textContent = originalText;
+                            }, 2000);
+                        });
+                    });
+                });
+            }
+
+            // Extract type information
+            function extractTypeInfo(typeData) {
+                if (!typeData) return 'Unknown';
+                
+                const kind = typeData.kind || '';
+                const name = typeData.name || '';
+                const ofType = typeData.ofType;
+                
+                if (kind === 'SCALAR') {
+                    return name;
+                } else if (kind === 'OBJECT') {
+                    return name;
+                } else if (kind === 'LIST') {
+                    if (ofType) {
+                        return `[${extractTypeInfo(ofType)}]`;
+                    }
+                    return '[]';
+                } else if (kind === 'NON_NULL') {
+                    if (ofType) {
+                        return `${extractTypeInfo(ofType)}!`;
+                    }
+                    return 'Unknown!';
+                } else {
+                    if (ofType) {
+                        return extractTypeInfo(ofType);
+                    }
+                    return name || kind;
+                }
+            }
+
+            // Reset UI
+            function resetUI() {
+                uploadSection.classList.remove('hidden');
+                processingSection.classList.add('hidden');
+                resultsSection.classList.add('hidden');
+                fileInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
