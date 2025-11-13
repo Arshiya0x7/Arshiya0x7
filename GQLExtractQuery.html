@@ -12,17 +12,94 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        :root {
+            --bg-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg-secondary: white;
+            --bg-card: white;
+            --bg-upload: #f8f9ff;
+            --bg-upload-hover: #edf0ff;
+            --bg-query-header: #f8f9ff;
+            --bg-query-header-hover: #edf0ff;
+            --bg-query-header-active: #e1e8ff;
+            --text-primary: #333;
+            --text-secondary: #555;
+            --text-light: #888;
+            --border-color: #eaeaea;
+            --accent-color: #667eea;
+            --accent-hover: #5a6fd8;
+            --return-type-bg: #e1e8ff;
+            --return-type-color: #4a5fc1;
+            --param-count-bg: #ffe1e1;
+            --param-count-color: #c14a4a;
+            --code-bg: #2d3748;
+            --code-color: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            --bg-secondary: #1a202c;
+            --bg-card: #2d3748;
+            --bg-upload: #2d3748;
+            --bg-upload-hover: #4a5568;
+            --bg-query-header: #2d3748;
+            --bg-query-header-hover: #4a5568;
+            --bg-query-header-active: #4a5568;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e0;
+            --text-light: #a0aec0;
+            --border-color: #4a5568;
+            --accent-color: #4299e1;
+            --accent-hover: #3182ce;
+            --return-type-bg: #2c5282;
+            --return-type-color: #bee3f8;
+            --param-count-bg: #742a2a;
+            --param-count-color: #fc8181;
+            --code-bg: #1a202c;
+            --code-color: #e2e8f0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             line-height: 1.6;
             min-height: 100vh;
             padding: 20px;
+            transition: all 0.3s ease;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .toggle-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--accent-color);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         header {
@@ -43,12 +120,13 @@
         }
 
         .card {
-            background: white;
+            background: var(--bg-card);
             border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            box-shadow: var(--shadow);
             padding: 25px;
             margin-bottom: 25px;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
         }
 
         .card:hover {
@@ -56,33 +134,33 @@
         }
 
         .upload-area {
-            border: 2px dashed #667eea;
+            border: 2px dashed var(--accent-color);
             border-radius: 8px;
             padding: 40px 20px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            background: #f8f9ff;
+            background: var(--bg-upload);
         }
 
         .upload-area:hover {
-            background: #edf0ff;
-            border-color: #5a6fd8;
+            background: var(--bg-upload-hover);
+            border-color: var(--accent-hover);
         }
 
         .upload-area i {
             font-size: 48px;
-            color: #667eea;
+            color: var(--accent-color);
             margin-bottom: 15px;
         }
 
         .upload-area p {
             margin-bottom: 15px;
-            color: #555;
+            color: var(--text-secondary);
         }
 
         .btn {
-            background: #667eea;
+            background: var(--accent-color);
             color: white;
             border: none;
             padding: 12px 25px;
@@ -95,7 +173,7 @@
         }
 
         .btn:hover {
-            background: #5a6fd8;
+            background: var(--accent-hover);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
@@ -106,12 +184,12 @@
 
         .btn-outline {
             background: transparent;
-            border: 2px solid #667eea;
-            color: #667eea;
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
         }
 
         .btn-outline:hover {
-            background: #667eea;
+            background: var(--accent-color);
             color: white;
         }
 
@@ -128,20 +206,20 @@
             justify-content: space-between;
             align-items: center;
             padding: 15px;
-            background: #f8f9ff;
+            background: var(--bg-query-header);
             border-radius: 8px;
             cursor: pointer;
-            border: 1px solid #eaeaea;
+            border: 1px solid var(--border-color);
             transition: all 0.3s ease;
         }
 
         .query-header:hover {
-            background: #edf0ff;
+            background: var(--bg-query-header-hover);
         }
 
         .query-header.active {
-            background: #e1e8ff;
-            border-color: #667eea;
+            background: var(--bg-query-header-active);
+            border-color: var(--accent-color);
         }
 
         .query-title {
@@ -153,6 +231,7 @@
         .query-icon {
             font-size: 1.2rem;
             transition: transform 0.3s ease;
+            color: var(--accent-color);
         }
 
         .query-header.active .query-icon {
@@ -162,7 +241,7 @@
         .query-name {
             font-size: 1.3rem;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
         }
 
         .query-meta {
@@ -172,16 +251,16 @@
         }
 
         .return-type {
-            background: #e1e8ff;
-            color: #4a5fc1;
+            background: var(--return-type-bg);
+            color: var(--return-type-color);
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 0.9rem;
         }
 
         .param-count {
-            background: #ffe1e1;
-            color: #c14a4a;
+            background: var(--param-count-bg);
+            color: var(--param-count-color);
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 0.9rem;
@@ -191,7 +270,7 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
-            background: white;
+            background: var(--bg-card);
             border-radius: 0 0 8px 8px;
         }
 
@@ -201,16 +280,16 @@
 
         .query-details {
             padding: 20px;
-            border: 1px solid #eaeaea;
+            border: 1px solid var(--border-color);
             border-top: none;
             border-radius: 0 0 8px 8px;
         }
 
         .section-title {
             font-size: 1.1rem;
-            color: #555;
+            color: var(--text-secondary);
             margin: 15px 0 10px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
             padding-bottom: 5px;
         }
 
@@ -219,11 +298,11 @@
         }
 
         .arg-item, .field-item {
-            background: white;
+            background: var(--bg-card);
             padding: 12px;
             margin-bottom: 8px;
             border-radius: 6px;
-            border: 1px solid #eaeaea;
+            border: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -231,25 +310,25 @@
 
         .arg-name, .field-name {
             font-weight: 600;
-            color: #444;
+            color: var(--text-primary);
         }
 
         .arg-type, .field-type {
-            color: #667eea;
+            color: var(--accent-color);
             font-family: monospace;
-            background: #f0f3ff;
+            background: var(--return-type-bg);
             padding: 2px 6px;
             border-radius: 4px;
         }
 
         .arg-default {
-            color: #888;
+            color: var(--text-light);
             font-size: 0.9rem;
         }
 
         .query-example {
-            background: #2d3748;
-            color: #e2e8f0;
+            background: var(--code-bg);
+            color: var(--code-color);
             padding: 15px;
             border-radius: 6px;
             margin-top: 15px;
@@ -277,7 +356,7 @@
         .tabs {
             display: flex;
             margin-bottom: 20px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .tab {
@@ -285,11 +364,12 @@
             cursor: pointer;
             border-bottom: 3px solid transparent;
             transition: all 0.3s ease;
+            color: var(--text-secondary);
         }
 
         .tab.active {
-            border-bottom: 3px solid #667eea;
-            color: #667eea;
+            border-bottom: 3px solid var(--accent-color);
+            color: var(--accent-color);
             font-weight: 600;
         }
 
@@ -302,7 +382,7 @@
         }
 
         .summary {
-            background: #e1e8ff;
+            background: var(--return-type-bg);
             padding: 15px;
             border-radius: 8px;
             margin-top: 20px;
@@ -310,7 +390,7 @@
 
         .summary h3 {
             margin-bottom: 10px;
-            color: #4a5fc1;
+            color: var(--return-type-color);
         }
 
         .summary-stats {
@@ -326,12 +406,12 @@
         .stat-value {
             font-size: 2rem;
             font-weight: bold;
-            color: #667eea;
+            color: var(--accent-color);
         }
 
         .stat-label {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--text-light);
         }
 
         .query-card {
@@ -368,11 +448,26 @@
                 width: 100%;
                 justify-content: space-between;
             }
+
+            .theme-toggle {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 20px;
+                text-align: center;
+            }
         }
     </style>
 </head>
-<body>
+<body data-theme="light">
     <div class="container">
+        <div class="theme-toggle">
+            <button class="toggle-btn" id="theme-toggle">
+                <span id="theme-icon">🌙</span>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
+
         <header>
             <h1>GraphQL Query Extractor</h1>
             <p class="subtitle">Upload your JSON schema and automatically extract queries and fields</p>
@@ -433,7 +528,7 @@
                 <div class="card">
                     <h3>Editable Output</h3>
                     <p>You can edit and copy the results:</p>
-                    <textarea id="export-textarea" style="width: 100%; height: 400px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; font-family: monospace; margin-top: 15px;"></textarea>
+                    <textarea id="export-textarea" style="width: 100%; height: 400px; padding: 15px; border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; margin-top: 15px; background: var(--bg-card); color: var(--text-primary);"></textarea>
                     <div class="actions">
                         <button class="btn copy-btn" id="copy-export-btn">Copy to Clipboard</button>
                         <button class="btn btn-outline" id="download-export-btn">Download as Text File</button>
@@ -457,11 +552,42 @@
             const downloadExportBtn = document.getElementById('download-export-btn');
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const themeText = document.getElementById('theme-text');
 
             // Statistics
             const totalQueriesEl = document.getElementById('total-queries');
             const totalParamsEl = document.getElementById('total-params');
             const totalTypesEl = document.getElementById('total-types');
+
+            // Theme management
+            function initTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                document.body.setAttribute('data-theme', savedTheme);
+                updateThemeButton(savedTheme);
+            }
+
+            function toggleTheme() {
+                const currentTheme = document.body.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                document.body.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeButton(newTheme);
+            }
+
+            function updateThemeButton(theme) {
+                if (theme === 'dark') {
+                    themeIcon.textContent = '☀️';
+                    themeText.textContent = 'Light Mode';
+                } else {
+                    themeIcon.textContent = '🌙';
+                    themeText.textContent = 'Dark Mode';
+                }
+            }
+
+            themeToggle.addEventListener('click', toggleTheme);
+            initTheme();
 
             // Tab management
             tabs.forEach(tab => {
@@ -493,17 +619,17 @@
             // Handle drag and drop
             dropArea.addEventListener('dragover', function(e) {
                 e.preventDefault();
-                this.style.background = '#e1e8ff';
+                this.style.background = 'var(--bg-upload-hover)';
             });
 
             dropArea.addEventListener('dragleave', function(e) {
                 e.preventDefault();
-                this.style.background = '#f8f9ff';
+                this.style.background = 'var(--bg-upload)';
             });
 
             dropArea.addEventListener('drop', function(e) {
                 e.preventDefault();
-                this.style.background = '#f8f9ff';
+                this.style.background = 'var(--bg-upload)';
                 
                 if (e.dataTransfer.files.length > 0) {
                     processFile(e.dataTransfer.files[0]);
@@ -656,17 +782,8 @@
                         const queryExample = document.createElement('div');
                         queryExample.className = 'query-example';
                         
-                        let queryExampleText = '';
-                        if (field.args && field.args.length > 0) {
-                            const argsString = field.args.map(arg => {
-                                return `  ${arg.name}: $${arg.name}`;
-                            }).join('\n');
-                            
-                            queryExampleText = `query ${field.name}Query(\n${argsString}\n) {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
-                        } else {
-                            queryExampleText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
-                        }
-                        
+                        // Generate correct GraphQL query with proper variable definitions
+                        let queryExampleText = generateQueryExample(field);
                         queryExample.textContent = queryExampleText;
                         queryDetails.appendChild(queryExample);
                         
@@ -738,6 +855,30 @@
                 });
             }
 
+            // Generate correct GraphQL query example
+            function generateQueryExample(field) {
+                let queryText = '';
+                
+                if (field.args && field.args.length > 0) {
+                    // Generate variable definitions with proper types
+                    const variableDefinitions = field.args.map(arg => {
+                        const argType = extractTypeInfo(arg.type);
+                        return `  $${arg.name}: ${argType}`;
+                    }).join(',\n');
+                    
+                    // Generate arguments for the query field
+                    const queryArguments = field.args.map(arg => {
+                        return `    ${arg.name}: $${arg.name}`;
+                    }).join('\n');
+                    
+                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n    __typename\n  }\n}`;
+                } else {
+                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n    __typename\n  }\n}`;
+                }
+                
+                return queryText;
+            }
+
             // Extract type information
             function extractTypeInfo(typeData) {
                 if (!typeData) return 'Unknown';
@@ -760,6 +901,8 @@
                         return `${extractTypeInfo(ofType)}!`;
                     }
                     return 'Unknown!';
+                } else if (kind === 'INPUT_OBJECT') {
+                    return name;
                 } else {
                     if (ofType) {
                         return extractTypeInfo(ofType);
