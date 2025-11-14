@@ -1058,9 +1058,9 @@
                         return `    ${arg.name}: $${arg.name}`;
                     }).join('\n');
                     
-                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n  }\n}`;
+                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n  __typename\n  }\n}`;
                 } else {
-                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
+                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  __typename\n  }\n}`;
                 }
                 
                 return queryText;
