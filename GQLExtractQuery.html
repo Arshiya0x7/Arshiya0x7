@@ -418,6 +418,42 @@
             margin-bottom: 15px;
         }
 
+        .parameters-container {
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .parameters-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .parameter-item {
+            background: var(--return-type-bg);
+            color: var(--return-type-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .parameters-text {
+            background: var(--code-bg);
+            color: var(--code-color);
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            margin-bottom: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -455,6 +491,10 @@
                 right: auto;
                 margin-bottom: 20px;
                 text-align: center;
+            }
+
+            .parameters-list {
+                justify-content: center;
             }
         }
     </style>
@@ -496,12 +536,36 @@
         <div id="results-section" class="hidden">
             <div class="tabs">
                 <div class="tab active" data-tab="queries">Queries</div>
+                <div class="tab" data-tab="parameters">Parameters</div>
                 <div class="tab" data-tab="summary">Summary</div>
                 <div class="tab" data-tab="export">Export</div>
             </div>
 
             <div class="tab-content active" id="queries-tab">
                 <div id="queries-container"></div>
+            </div>
+
+            <div class="tab-content" id="parameters-tab">
+                <div class="card">
+                    <h3>All Unique Parameters</h3>
+                    <p>List of all parameter names without duplicates:</p>
+                    
+                    <div class="parameters-container">
+                        <div class="section-title">Parameter Names ({uniqueCount})</div>
+                        <div class="parameters-list" id="parameters-list">
+                            <!-- Parameters will be displayed here as chips -->
+                        </div>
+                        
+                        <div class="section-title">Parameters as Text</div>
+                        <div class="parameters-text" id="parameters-text">
+                            <!-- Parameters will be displayed here as text -->
+                        </div>
+                        
+                        <div class="actions">
+                            <button class="btn copy-btn" id="copy-parameters-btn">Copy Parameters</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="tab-content" id="summary-tab">
@@ -555,6 +619,9 @@
             const themeToggle = document.getElementById('theme-toggle');
             const themeIcon = document.getElementById('theme-icon');
             const themeText = document.getElementById('theme-text');
+            const parametersList = document.getElementById('parameters-list');
+            const parametersText = document.getElementById('parameters-text');
+            const copyParametersBtn = document.getElementById('copy-parameters-btn');
 
             // Statistics
             const totalQueriesEl = document.getElementById('total-queries');
@@ -649,6 +716,18 @@
                 }, 2000);
             });
 
+            // Copy parameters content
+            copyParametersBtn.addEventListener('click', function() {
+                const parametersContent = parametersText.textContent;
+                navigator.clipboard.writeText(parametersContent).then(() => {
+                    const originalText = this.textContent;
+                    this.textContent = 'Copied!';
+                    setTimeout(() => {
+                        this.textContent = originalText;
+                    }, 2000);
+                });
+            });
+
             // Download export
             downloadExportBtn.addEventListener('click', function() {
                 const content = exportTextarea.value;
@@ -704,6 +783,7 @@
                 let totalQueries = 0;
                 let totalParams = 0;
                 const types = new Set();
+                const allParameters = new Set(); // Using Set to automatically avoid duplicates
 
                 if (jsonData.data && jsonData.data.__type) {
                     const fields = jsonData.data.__type.fields || [];
@@ -757,6 +837,9 @@
                                 
                                 const argType = extractTypeInfo(arg.type);
                                 types.add(argType);
+                                
+                                // Add parameter name to the Set (automatically removes duplicates)
+                                allParameters.add(arg.name);
                                 
                                 argItem.innerHTML = `
                                     <div>
@@ -836,6 +919,9 @@
                 // Update export content
                 exportTextarea.value = exportContent;
                 
+                // Update parameters tab
+                updateParametersTab(allParameters);
+                
                 // Add event listeners for copy buttons
                 document.querySelectorAll('.copy-btn[data-query]').forEach(btn => {
                     btn.addEventListener('click', function(e) {
@@ -855,6 +941,30 @@
                 });
             }
 
+            // Update parameters tab with unique parameter names
+            function updateParametersTab(parametersSet) {
+                const parametersArray = Array.from(parametersSet).sort();
+                
+                // Clear existing content
+                parametersList.innerHTML = '';
+                parametersText.textContent = '';
+                
+                // Update section title with count
+                const sectionTitle = document.querySelector('#parameters-tab .section-title');
+                sectionTitle.textContent = `Parameter Names (${parametersArray.length})`;
+                
+                // Display parameters as chips
+                parametersArray.forEach(param => {
+                    const paramChip = document.createElement('div');
+                    paramChip.className = 'parameter-item';
+                    paramChip.textContent = param;
+                    parametersList.appendChild(paramChip);
+                });
+                
+                // Display parameters as text (one per line)
+                parametersText.textContent = parametersArray.join('\n');
+            }
+
             // Generate correct GraphQL query example
             function generateQueryExample(field) {
                 let queryText = '';
@@ -871,9 +981,9 @@
                         return `    ${arg.name}: $${arg.name}`;
                     }).join('\n');
                     
-                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n    __typename\n  }\n}`;
+                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n  }\n}`;
                 } else {
-                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n    __typename\n  }\n}`;
+                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
                 }
                 
                 return queryText;
