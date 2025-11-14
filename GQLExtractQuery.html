@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GraphQL Query Extractor v1.2</title>
+    <title>GraphQL Query Extractor</title>
     <style>
         * {
             margin: 0;
@@ -34,6 +34,11 @@
             --code-bg: #2d3748;
             --code-color: #e2e8f0;
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            --tab-bg: #f8f9ff;
+            --tab-active-bg: #667eea;
+            --tab-active-color: white;
+            --reset-bg: #e53e3e;
+            --reset-hover: #c53030;
         }
 
         [data-theme="dark"] {
@@ -58,6 +63,11 @@
             --code-bg: #1a202c;
             --code-color: #e2e8f0;
             --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            --tab-bg: #2d3748;
+            --tab-active-bg: #4299e1;
+            --tab-active-color: white;
+            --reset-bg: #e53e3e;
+            --reset-hover: #c53030;
         }
 
         body {
@@ -74,11 +84,13 @@
             margin: 0 auto;
         }
 
-        .theme-toggle {
+        .header-controls {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
+            display: flex;
+            gap: 10px;
         }
 
         .toggle-btn {
@@ -98,6 +110,29 @@
         }
 
         .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .reset-btn {
+            background: var(--reset-bg);
+            border: 2px solid var(--reset-bg);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .reset-btn:hover {
+            background: var(--reset-hover);
+            border-color: var(--reset-hover);
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
@@ -199,6 +234,51 @@
 
         .results {
             margin-top: 30px;
+        }
+
+        /* Button Style Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            background: var(--tab-bg);
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .tab:hover {
+            background: var(--accent-color);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab.active {
+            background: var(--tab-active-bg);
+            color: var(--tab-active-color);
+            border-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         .query-header {
@@ -353,34 +433,6 @@
             background: #2d3748;
         }
 
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tab {
-            padding: 12px 20px;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s ease;
-            color: var(--text-secondary);
-        }
-
-        .tab.active {
-            border-bottom: 3px solid var(--accent-color);
-            color: var(--accent-color);
-            font-weight: 600;
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         .summary {
             background: var(--return-type-bg);
             padding: 15px;
@@ -485,26 +537,38 @@
                 justify-content: space-between;
             }
 
-            .theme-toggle {
+            .header-controls {
                 position: relative;
                 top: auto;
                 right: auto;
                 margin-bottom: 20px;
-                text-align: center;
+                justify-content: center;
             }
 
             .parameters-list {
                 justify-content: center;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                min-width: auto;
             }
         }
     </style>
 </head>
 <body data-theme="light">
     <div class="container">
-        <div class="theme-toggle">
+        <div class="header-controls">
             <button class="toggle-btn" id="theme-toggle">
                 <span id="theme-icon">🌙</span>
                 <span id="theme-text">Dark Mode</span>
+            </button>
+            <button class="reset-btn hidden" id="reset-btn">
+                <span>🔄</span>
+                <span>Reset</span>
             </button>
         </div>
 
@@ -535,10 +599,10 @@
 
         <div id="results-section" class="hidden">
             <div class="tabs">
-                <div class="tab active" data-tab="queries">Queries</div>
-                <div class="tab" data-tab="parameters">Parameters</div>
-                <div class="tab" data-tab="summary">Summary</div>
-                <div class="tab" data-tab="export">Export</div>
+                <div class="tab active" data-tab="queries">📋 Queries</div>
+                <div class="tab" data-tab="parameters">⚙️ Parameters</div>
+                <div class="tab" data-tab="summary">📊 Summary</div>
+                <div class="tab" data-tab="export">📤 Export</div>
             </div>
 
             <div class="tab-content active" id="queries-tab">
@@ -622,6 +686,7 @@
             const parametersList = document.getElementById('parameters-list');
             const parametersText = document.getElementById('parameters-text');
             const copyParametersBtn = document.getElementById('copy-parameters-btn');
+            const resetBtn = document.getElementById('reset-btn');
 
             // Statistics
             const totalQueriesEl = document.getElementById('total-queries');
@@ -655,6 +720,17 @@
 
             themeToggle.addEventListener('click', toggleTheme);
             initTheme();
+
+            // Reset functionality
+            resetBtn.addEventListener('click', resetUI);
+
+            function showResetButton() {
+                resetBtn.classList.remove('hidden');
+            }
+
+            function hideResetButton() {
+                resetBtn.classList.add('hidden');
+            }
 
             // Tab management
             tabs.forEach(tab => {
@@ -761,6 +837,7 @@
                             extractQueries(jsonData);
                             processingSection.classList.add('hidden');
                             resultsSection.classList.remove('hidden');
+                            showResetButton();
                         }, 500); // Artificial delay for better UX
                     } catch (error) {
                         alert('Error processing JSON file: ' + error.message);
@@ -1027,6 +1104,16 @@
                 processingSection.classList.add('hidden');
                 resultsSection.classList.add('hidden');
                 fileInput.value = '';
+                hideResetButton();
+                
+                // Clear all data
+                queriesContainer.innerHTML = '';
+                exportTextarea.value = '';
+                parametersList.innerHTML = '';
+                parametersText.textContent = '';
+                totalQueriesEl.textContent = '0';
+                totalParamsEl.textContent = '0';
+                totalTypesEl.textContent = '0';
             }
         });
     </script>
