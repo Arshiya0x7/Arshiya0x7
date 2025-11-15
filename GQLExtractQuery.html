@@ -39,6 +39,8 @@
             --tab-active-color: white;
             --reset-bg: #e53e3e;
             --reset-hover: #c53030;
+            --mutation-color: #e53e3e;
+            --mutation-bg: #fed7d7;
         }
 
         [data-theme="dark"] {
@@ -68,6 +70,8 @@
             --tab-active-color: white;
             --reset-bg: #e53e3e;
             --reset-hover: #c53030;
+            --mutation-color: #fc8181;
+            --mutation-bg: #742a2a;
         }
 
         body {
@@ -154,6 +158,22 @@
             opacity: 0.9;
         }
 
+        .schema-type-badge {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 10px;
+            box-shadow: var(--shadow);
+        }
+
+        .schema-type-badge.mutation {
+            background: var(--mutation-color);
+        }
+
         .card {
             background: var(--bg-card);
             border-radius: 12px;
@@ -176,6 +196,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             background: var(--bg-upload);
+            position: relative;
         }
 
         .upload-area:hover {
@@ -230,6 +251,16 @@
 
         .hidden {
             display: none;
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
         }
 
         .results {
@@ -302,6 +333,10 @@
             border-color: var(--accent-color);
         }
 
+        .query-header.mutation {
+            border-left: 4px solid var(--mutation-color);
+        }
+
         .query-title {
             display: flex;
             align-items: center;
@@ -316,6 +351,10 @@
 
         .query-header.active .query-icon {
             transform: rotate(90deg);
+        }
+
+        .query-header.mutation .query-icon {
+            color: var(--mutation-color);
         }
 
         .query-name {
@@ -575,6 +614,7 @@
         <header>
             <h1>GraphQL Query Extractor</h1>
             <p class="subtitle">Upload your JSON schema and automatically extract queries and fields</p>
+            <div id="schema-type-badge" class="schema-type-badge hidden"></div>
         </header>
 
         <div class="card">
@@ -583,7 +623,7 @@
                     <i>📁</i>
                     <h3>Drop your JSON file here</h3>
                     <p>or click to select a file</p>
-                    <input type="file" id="file-input" accept=".json" class="hidden">
+                    <input type="file" id="file-input" accept=".json" class="file-input">
                     <button class="btn" id="browse-btn">Browse Files</button>
                 </div>
             </div>
@@ -599,7 +639,7 @@
 
         <div id="results-section" class="hidden">
             <div class="tabs">
-                <div class="tab active" data-tab="queries">📋 Queries</div>
+                <div class="tab active" data-tab="queries">📋 Operations</div>
                 <div class="tab" data-tab="parameters">⚙️ Parameters</div>
                 <div class="tab" data-tab="summary">📊 Summary</div>
                 <div class="tab" data-tab="export">📤 Export</div>
@@ -638,7 +678,7 @@
                     <div class="summary-stats">
                         <div class="stat">
                             <div class="stat-value" id="total-queries">0</div>
-                            <div class="stat-label">Queries</div>
+                            <div class="stat-label" id="operations-label">Operations</div>
                         </div>
                         <div class="stat">
                             <div class="stat-value" id="total-params">0</div>
@@ -687,11 +727,16 @@
             const parametersText = document.getElementById('parameters-text');
             const copyParametersBtn = document.getElementById('copy-parameters-btn');
             const resetBtn = document.getElementById('reset-btn');
+            const schemaTypeBadge = document.getElementById('schema-type-badge');
+            const operationsLabel = document.getElementById('operations-label');
 
             // Statistics
             const totalQueriesEl = document.getElementById('total-queries');
             const totalParamsEl = document.getElementById('total-params');
             const totalTypesEl = document.getElementById('total-types');
+
+            // Current schema type (Query or Mutation)
+            let currentSchemaType = 'Query';
 
             // Theme management
             function initTheme() {
@@ -747,15 +792,25 @@
                 });
             });
 
-            // Open file selection dialog
-            browseBtn.addEventListener('click', () => {
+            // Fix: Proper file input handling
+            browseBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 fileInput.click();
             });
 
-            // Handle file selection
+            // Handle file selection from both browse button and file input
             fileInput.addEventListener('change', function(e) {
-                if (this.files.length > 0) {
+                if (this.files && this.files.length > 0) {
                     processFile(this.files[0]);
+                }
+            });
+
+            // Handle click on upload area
+            dropArea.addEventListener('click', function(e) {
+                // Only trigger file input if the click wasn't on the browse button
+                if (e.target !== browseBtn && !browseBtn.contains(e.target)) {
+                    fileInput.click();
                 }
             });
 
@@ -774,7 +829,7 @@
                 e.preventDefault();
                 this.style.background = 'var(--bg-upload)';
                 
-                if (e.dataTransfer.files.length > 0) {
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
                     processFile(e.dataTransfer.files[0]);
                 }
             });
@@ -811,7 +866,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'graphql_queries.txt';
+                a.download = 'graphql_operations.txt';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -820,6 +875,11 @@
 
             // Process JSON file
             function processFile(file) {
+                if (!file) {
+                    alert('No file selected.');
+                    return;
+                }
+
                 if (file.type !== 'application/json') {
                     alert('Please select a JSON file.');
                     return;
@@ -838,7 +898,7 @@
                             processingSection.classList.add('hidden');
                             resultsSection.classList.remove('hidden');
                             showResetButton();
-                        }, 500); // Artificial delay for better UX
+                        }, 500);
                     } catch (error) {
                         alert('Error processing JSON file: ' + error.message);
                         resetUI();
@@ -853,6 +913,46 @@
                 reader.readAsText(file);
             }
 
+            // Detect schema type (Query or Mutation)
+            function detectSchemaType(jsonData) {
+                if (jsonData.data && jsonData.data.__type) {
+                    const typeName = jsonData.data.__type.name;
+                    if (typeName === 'Mutation') {
+                        currentSchemaType = 'Mutation';
+                        return 'Mutation';
+                    } else if (typeName === 'Query') {
+                        currentSchemaType = 'Query';
+                        return 'Query';
+                    }
+                }
+                currentSchemaType = 'Query';
+                return 'Query';
+            }
+
+            // Update schema type badge
+            function updateSchemaTypeBadge(schemaType) {
+                schemaTypeBadge.textContent = `${schemaType} Schema`;
+                schemaTypeBadge.classList.remove('hidden');
+                
+                if (schemaType === 'Mutation') {
+                    schemaTypeBadge.classList.add('mutation');
+                    operationsLabel.textContent = 'Mutations';
+                    // Update tab name
+                    const operationsTab = document.querySelector('.tab[data-tab="queries"]');
+                    if (operationsTab) {
+                        operationsTab.textContent = '📋 Mutations';
+                    }
+                } else {
+                    schemaTypeBadge.classList.remove('mutation');
+                    operationsLabel.textContent = 'Queries';
+                    // Update tab name
+                    const operationsTab = document.querySelector('.tab[data-tab="queries"]');
+                    if (operationsTab) {
+                        operationsTab.textContent = '📋 Queries';
+                    }
+                }
+            }
+
             // Extract queries from JSON data
             function extractQueries(jsonData) {
                 queriesContainer.innerHTML = '';
@@ -860,7 +960,11 @@
                 let totalQueries = 0;
                 let totalParams = 0;
                 const types = new Set();
-                const allParameters = new Set(); // Using Set to automatically avoid duplicates
+                const allParameters = new Set();
+
+                // Detect schema type
+                const schemaType = detectSchemaType(jsonData);
+                updateSchemaTypeBadge(schemaType);
 
                 if (jsonData.data && jsonData.data.__type) {
                     const fields = jsonData.data.__type.fields || [];
@@ -872,7 +976,7 @@
                         
                         // Query header (collapsible)
                         const queryHeader = document.createElement('div');
-                        queryHeader.className = 'query-header';
+                        queryHeader.className = `query-header ${currentSchemaType.toLowerCase()}`;
                         
                         const returnType = extractTypeInfo(field.type);
                         types.add(returnType);
@@ -936,13 +1040,13 @@
                         // Query example
                         const exampleTitle = document.createElement('div');
                         exampleTitle.className = 'section-title';
-                        exampleTitle.textContent = 'Query Example';
+                        exampleTitle.textContent = `${currentSchemaType} Example`;
                         queryDetails.appendChild(exampleTitle);
                         
                         const queryExample = document.createElement('div');
                         queryExample.className = 'query-example';
                         
-                        // Generate correct GraphQL query with proper variable definitions
+                        // Generate correct GraphQL query/mutation with proper variable definitions
                         let queryExampleText = generateQueryExample(field);
                         queryExample.textContent = queryExampleText;
                         queryDetails.appendChild(queryExample);
@@ -951,7 +1055,7 @@
                         const actions = document.createElement('div');
                         actions.className = 'actions';
                         actions.innerHTML = `
-                            <button class="btn copy-btn" data-query="${field.name}">Copy Query</button>
+                            <button class="btn copy-btn" data-query="${field.name}">Copy ${currentSchemaType}</button>
                         `;
                         queryDetails.appendChild(actions);
                         
@@ -968,7 +1072,7 @@
                         queriesContainer.appendChild(queryCard);
                         
                         // Add to export content
-                        exportContent += `Query: ${field.name}\n`;
+                        exportContent += `${currentSchemaType}: ${field.name}\n`;
                         exportContent += `Return Type: ${returnType}\n`;
                         
                         if (field.args && field.args.length > 0) {
@@ -1002,7 +1106,7 @@
                 // Add event listeners for copy buttons
                 document.querySelectorAll('.copy-btn[data-query]').forEach(btn => {
                     btn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // Prevent triggering the collapse/expand
+                        e.stopPropagation();
                         const queryName = this.getAttribute('data-query');
                         const queryCard = this.closest('.query-card');
                         const queryExample = queryCard.querySelector('.query-example').textContent;
@@ -1028,7 +1132,9 @@
                 
                 // Update section title with count
                 const sectionTitle = document.querySelector('#parameters-tab .section-title');
-                sectionTitle.textContent = `Parameter Names (${parametersArray.length})`;
+                if (sectionTitle) {
+                    sectionTitle.textContent = `Parameter Names (${parametersArray.length})`;
+                }
                 
                 // Display parameters as chips
                 parametersArray.forEach(param => {
@@ -1042,9 +1148,10 @@
                 parametersText.textContent = parametersArray.join('\n');
             }
 
-            // Generate correct GraphQL query example
+            // Generate correct GraphQL query/mutation example
             function generateQueryExample(field) {
                 let queryText = '';
+                const operationType = currentSchemaType.toLowerCase(); // 'query' or 'mutation'
                 
                 if (field.args && field.args.length > 0) {
                     // Generate variable definitions with proper types
@@ -1058,9 +1165,9 @@
                         return `    ${arg.name}: $${arg.name}`;
                     }).join('\n');
                     
-                    queryText = `query ${field.name}Query(\n${variableDefinitions}\n) {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n  __typename\n  }\n}`;
+                    queryText = `${operationType} ${field.name}${currentSchemaType} {\n  ${field.name}(\n${queryArguments}\n  ) {\n    # Add required fields here\n    id\n    name\n  }\n}`;
                 } else {
-                    queryText = `query {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  __typename\n  }\n}`;
+                    queryText = `${operationType} {\n  ${field.name} {\n    # Add required fields here\n    id\n    name\n  }\n}`;
                 }
                 
                 return queryText;
@@ -1105,6 +1212,7 @@
                 resultsSection.classList.add('hidden');
                 fileInput.value = '';
                 hideResetButton();
+                schemaTypeBadge.classList.add('hidden');
                 
                 // Clear all data
                 queriesContainer.innerHTML = '';
@@ -1114,6 +1222,13 @@
                 totalQueriesEl.textContent = '0';
                 totalParamsEl.textContent = '0';
                 totalTypesEl.textContent = '0';
+                
+                // Reset tab name
+                const operationsTab = document.querySelector('.tab[data-tab="queries"]');
+                if (operationsTab) {
+                    operationsTab.textContent = '📋 Operations';
+                }
+                operationsLabel.textContent = 'Operations';
             }
         });
     </script>
