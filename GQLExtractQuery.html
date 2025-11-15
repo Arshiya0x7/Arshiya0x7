@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GraphQL Query Extractor v1.3</title>
+    <title>GraphQL Query Extractor (Arshiya) v1.4</title>
     <style>
         * {
             margin: 0;
@@ -265,6 +265,78 @@
 
         .results {
             margin-top: 30px;
+        }
+
+        /* Sample Queries Section */
+        .sample-queries {
+            margin-top: 30px;
+        }
+
+        .sample-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .sample-tab {
+            background: var(--tab-bg);
+            border: 2px solid var(--accent-color);
+            color: var(--accent-color);
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .sample-tab:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .sample-tab.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .sample-content {
+            display: none;
+        }
+
+        .sample-content.active {
+            display: block;
+        }
+
+        .sample-code {
+            background: var(--code-bg);
+            color: var(--code-color);
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .copy-sample-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .copy-sample-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
         }
 
         /* Button Style Tabs */
@@ -595,6 +667,10 @@
             .tab {
                 min-width: auto;
             }
+
+            .sample-tabs {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -634,6 +710,95 @@
                     <h3>Processing your file...</h3>
                     <p>Please wait a moment</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Sample Queries Section -->
+        <div class="card sample-queries" id="sample-queries-section">
+            <h3 style="margin-bottom: 20px; text-align: center;">📋 Sample GraphQL Queries</h3>
+            <p style="text-align: center; margin-bottom: 20px; color: var(--text-secondary);">
+                Use these sample queries to extract schema information from your GraphQL endpoint
+            </p>
+            
+            <div class="sample-tabs">
+                <div class="sample-tab active" data-sample="query">Query Schema</div>
+                <div class="sample-tab" data-sample="mutation">Mutation Schema</div>
+            </div>
+
+            <div class="sample-content active" id="sample-query">
+                <div class="sample-code">
+                    <button class="copy-sample-btn" data-sample="query">Copy</button>{
+  __type(name: "Query") {
+    name
+    kind
+    fields(includeDeprecated: true) {
+      name
+      description
+      args {
+        name
+        description
+        type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+      }
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}
+                </div>
+            </div>
+
+            <div class="sample-content" id="sample-mutation">
+                <div class="sample-code">
+                    <button class="copy-sample-btn" data-sample="mutation">Copy</button>{
+  __type(name: "Mutation") {
+    name
+    kind
+    fields(includeDeprecated: true) {
+      name
+      description
+      args {
+        name
+        description
+        type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+      }
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <p style="color: var(--text-light); font-size: 0.9rem;">
+                    💡 Send these queries to your GraphQL endpoint and upload the JSON response above
+                </p>
             </div>
         </div>
 
@@ -729,6 +894,12 @@
             const resetBtn = document.getElementById('reset-btn');
             const schemaTypeBadge = document.getElementById('schema-type-badge');
             const operationsLabel = document.getElementById('operations-label');
+            const sampleQueriesSection = document.getElementById('sample-queries-section');
+
+            // Sample queries elements
+            const sampleTabs = document.querySelectorAll('.sample-tab');
+            const sampleContents = document.querySelectorAll('.sample-content');
+            const copySampleBtns = document.querySelectorAll('.copy-sample-btn');
 
             // Statistics
             const totalQueriesEl = document.getElementById('total-queries');
@@ -737,6 +908,70 @@
 
             // Current schema type (Query or Mutation)
             let currentSchemaType = 'Query';
+
+            // Sample queries data - Raw GraphQL queries without JSON wrapper
+            const sampleQueries = {
+                query: `{
+  __type(name: "Query") {
+    name
+    kind
+    fields(includeDeprecated: true) {
+      name
+      description
+      args {
+        name
+        description
+        type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+      }
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}`,
+                mutation: `{
+  __type(name: "Mutation") {
+    name
+    kind
+    fields(includeDeprecated: true) {
+      name
+      description
+      args {
+        name
+        description
+        type {
+          kind
+          name
+          ofType {
+            kind
+            name
+          }
+        }
+      }
+      type {
+        kind
+        name
+        ofType {
+          kind
+          name
+        }
+      }
+    }
+  }
+}`
+            };
 
             // Theme management
             function initTheme() {
@@ -766,6 +1001,37 @@
             themeToggle.addEventListener('click', toggleTheme);
             initTheme();
 
+            // Sample queries tab management
+            sampleTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const sampleType = tab.getAttribute('data-sample');
+                    
+                    // Deactivate all sample tabs
+                    sampleTabs.forEach(t => t.classList.remove('active'));
+                    sampleContents.forEach(c => c.classList.remove('active'));
+                    
+                    // Activate selected sample tab
+                    tab.classList.add('active');
+                    document.getElementById(`sample-${sampleType}`).classList.add('active');
+                });
+            });
+
+            // Copy sample queries - Copy raw GraphQL queries
+            copySampleBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const sampleType = this.getAttribute('data-sample');
+                    const sampleContent = sampleQueries[sampleType];
+                    
+                    navigator.clipboard.writeText(sampleContent).then(() => {
+                        const originalText = this.textContent;
+                        this.textContent = 'Copied!';
+                        setTimeout(() => {
+                            this.textContent = originalText;
+                        }, 2000);
+                    });
+                });
+            });
+
             // Reset functionality
             resetBtn.addEventListener('click', resetUI);
 
@@ -775,6 +1041,14 @@
 
             function hideResetButton() {
                 resetBtn.classList.add('hidden');
+            }
+
+            function showSampleQueries() {
+                sampleQueriesSection.classList.remove('hidden');
+            }
+
+            function hideSampleQueries() {
+                sampleQueriesSection.classList.add('hidden');
             }
 
             // Tab management
@@ -897,6 +1171,7 @@
                             extractQueries(jsonData);
                             processingSection.classList.add('hidden');
                             resultsSection.classList.remove('hidden');
+                            hideSampleQueries(); // Hide sample queries when results are shown
                             showResetButton();
                         }, 500);
                     } catch (error) {
@@ -1213,6 +1488,7 @@
                 fileInput.value = '';
                 hideResetButton();
                 schemaTypeBadge.classList.add('hidden');
+                showSampleQueries(); // Show sample queries when reset
                 
                 // Clear all data
                 queriesContainer.innerHTML = '';
